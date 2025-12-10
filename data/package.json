@@ -1,0 +1,16 @@
+{
+  "name": "proto-gen",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "protobufjs": "^7.2.1"
+  },
+  "scripts": {
+    "gen:descriptor": "pbjs -t json -o proto/descriptor.json proto/**/*.proto"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

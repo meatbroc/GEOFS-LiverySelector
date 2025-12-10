@@ -1,0 +1,69 @@
+# Workflow: generate proto/descriptor.json using protobufjs when raw JSON changes
+# Trigger: push events that modify data/raw/*.json
+
+on:
+  push:
+    paths:
+      - 'data/raw/**/*.json'
+
+jobs:
+  build-descriptor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      PROTO_DIR: proto                # where your .proto files live (change if needed)
+      OUT_JSON: proto/descriptor.json # output path for descriptor JSON (change if needed)
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js and enable npm caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: data/package-lock.json
+
+      - name: Install dependencies (npm ci --prefix data)
+        run: |
+          set -euo pipefail
+          if [ -f data/package-lock.json ]; then
+            npm ci --prefix data
+          else
+            echo "No data/package-lock.json found; running npm install --prefix data (consider committing package-lock.json to enable caching)."
+            npm install --prefix data
+          fi
+
+      - name: Generate descriptor.json (protobufjs/pbjs)
+        run: |
+          set -euo pipefail
+          echo "Generating descriptor json from $PROTO_DIR -> $OUT_JSON"
+          mkdir -p "$(dirname "$OUT_JSON")"
+
+          if [ -x "./data/node_modules/.bin/pbjs" ]; then
+            ./data/node_modules/.bin/pbjs -t json -o "$OUT_JSON" "$PROTO_DIR"/**/*.proto
+          else
+            npm --prefix data exec -- pbjs -t json -o "$OUT_JSON" "$PROTO_DIR"/**/*.proto
+          fi
+
+          echo "Generated $(wc -c < "$OUT_JSON") bytes -> $OUT_JSON"
+
+      - name: Commit descriptor.json if changed
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- "$OUT_JSON"; then
+            echo "No changes in $OUT_JSON; nothing to commit."
+            exit 0
+          fi
+
+          git add "$OUT_JSON"
+          git commit -m "chore: regenerate proto descriptor.json [skip ci]"
+          git push origin HEAD:${{ github.ref_name }}
