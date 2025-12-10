@@ -1,0 +1,68 @@
+name: Generate Protobuf Files
+
+on:
+  push:
+    paths:
+      - 'data/raw/**.json'
+  pull_request:
+    paths:
+      - 'data/raw/**.json'
+
+jobs:
+  generate-pb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Sparse Checkout repository
+        run: |
+          git init
+          git remote add origin ${{ github.repositoryUrl }}
+          git config core.sparseCheckout true
+          echo "data/raw/" >> .git/info/sparse-checkout
+          echo "data/proto/" >> .git/info/sparse-checkout
+          git fetch --depth=2 origin ${{ github.ref }}
+          git checkout -f ${{ github.ref }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Find modified JSON files
+        id: modified
+        run: |
+          echo "Finding modified JSON files..."
+          # Use the diff against the base commit of PR or previous commit on push
+          BASE_SHA="${{ github.event.before }}"
+          if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            # In case of new branch, use the first commit
+            BASE_SHA=$(git rev-list --max-parents=0 HEAD)
+          fi
+          files=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- data/raw/*.json)
+          echo "Modified files: $files"
+          echo "::set-output name=files::$files"
+
+      - name: Generate PB files
+        if: steps.modified.outputs.files != ''
+        run: |
+          mkdir -p data/proto
+          for file in ${{ steps.modified.outputs.files }}; do
+            echo "Processing $file"
+            # Convert output path to data/proto with same filename
+            filename=$(basename "$file" .json)
+            out="data/proto/$filename.pb"
+            npx pbjs -t static-module -w commonjs -o "$out" "$file"
+          done
