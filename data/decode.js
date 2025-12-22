@@ -1,5 +1,5 @@
 window.executeOnEventDone("geofsInitialized", function () {
-    var $Reader = window.protobuf.Reader, $Writer = window.protobuf.Writer, $util = window.protobuf.util;
+    var $Reader = window.protobuf.Reader;
     var $root = window.protobuf.roots["default"] || (window.protobuf.roots["default"] = {});
     $root.LiveryObject = (function () {
         function LiveryObject() {}
@@ -27,13 +27,14 @@ window.executeOnEventDone("geofsInitialized", function () {
                     case 4: {
                         if (!(message.aircrafts && message.aircrafts.length))
                             message.aircrafts = [];
-                        message.aircrafts.push($root.LiveryObject.Aircraft.decode(reader, reader.uint32());
+                        message.aircrafts.push($root.LiveryObject.Aircraft.decode(reader, reader.uint32()));
                     }
                     default:
                         reader.skipType(tag & 7);
                         break;
                 }
             }
+        }
         LiveryObject.MpItem = (function() {
             function MpItem() {}
             MpItem.decode = function decode(reader, length, error) {

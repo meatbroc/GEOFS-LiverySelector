@@ -4,9 +4,14 @@ on:
   push:
     paths:
       - 'data/raw/**.json'
+      - 'data/raw/schema.proto'
   pull_request:
     paths:
       - 'data/raw/**.json'
+      - 'data/raw/schema.proto'
+concurrency:
+  group: "committers"
+  cancel-in-progress: false
 
 jobs:
   generate-pb:
@@ -45,10 +50,8 @@ jobs:
         id: modified
         run: |
           echo "Finding modified JSON files..."
-          # Use the diff against the base commit of PR or previous commit on push
           BASE_SHA="${{ github.event.before }}"
           if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
-            # In case of new branch, use the first commit
             BASE_SHA=$(git rev-list --max-parents=0 HEAD)
           fi
           files=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- data/raw/*.json)
@@ -61,7 +64,6 @@ jobs:
           mkdir -p data/proto
           for file in ${{ steps.modified.outputs.files }}; do
             echo "Processing $file"
-            # Convert output path to data/proto with same filename
             filename=$(basename "$file" .json)
             out="data/proto/$filename.pb"
             npx pbjs -t static-module -w commonjs -o "$out" "$file"
