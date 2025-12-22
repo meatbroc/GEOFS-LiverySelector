@@ -4,7 +4,8 @@ message LiveryObject {
   string version = 1;
   string dapi = 2;
   string mapi = 3;
-  repeated Aircraft aircrafts = 4;
+  map<uint32, Aircraft> aircrafts = 4;
+
   message MpItem {
     optional int32 modelIndex = 1;
     optional int32 textureIndex = 2;
