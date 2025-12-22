@@ -6,6 +6,9 @@ on:
       - livery.json
   workflow_dispatch:
 
+concurrency:
+  group: "committers"
+  cancel-in-progress: false
 jobs:
   discord-livery-announcement:
     if: github.actor != 'github-actions[bot]'
