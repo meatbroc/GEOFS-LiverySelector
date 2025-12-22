@@ -1,14 +1,14 @@
-name: Generate Protobuf Files
+name: Generate PB Files from JSON
 
 on:
   push:
     paths:
       - 'data/raw/**.json'
-      - 'data/raw/schema.proto'
+      - 'data/schema.proto'
   pull_request:
     paths:
       - 'data/raw/**.json'
-      - 'data/raw/schema.proto'
+      - 'data/schema.proto'
 concurrency:
   group: "committers"
   cancel-in-progress: false
@@ -18,6 +18,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository with sparse paths
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          sparse-checkout: |
+            data/raw
+            data/proto
+            data/package.json
+            data/package-lock.json
+            data/schema.proto
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -27,44 +37,50 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            node_modules
+            data/node_modules
             ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('data/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-
-      - name: Sparse Checkout repository
-        run: |
-          git init
-          git remote add origin ${{ github.repositoryUrl }}
-          git config core.sparseCheckout true
-          echo "data/raw/" >> .git/info/sparse-checkout
-          echo "data/proto/" >> .git/info/sparse-checkout
-          git fetch --depth=2 origin ${{ github.ref }}
-          git checkout -f ${{ github.ref }}
-
       - name: Install dependencies
+        working-directory: data
         run: npm ci
 
-      - name: Find modified JSON files
-        id: modified
-        run: |
-          echo "Finding modified JSON files..."
-          BASE_SHA="${{ github.event.before }}"
-          if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
-            BASE_SHA=$(git rev-list --max-parents=0 HEAD)
-          fi
-          files=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- data/raw/*.json)
-          echo "Modified files: $files"
-          echo "::set-output name=files::$files"
-
-      - name: Generate PB files
-        if: steps.modified.outputs.files != ''
+      - name: Convert JSON files to PB
+        working-directory: data
         run: |
           mkdir -p data/proto
-          for file in ${{ steps.modified.outputs.files }}; do
-            echo "Processing $file"
-            filename=$(basename "$file" .json)
-            out="data/proto/$filename.pb"
-            npx pbjs -t static-module -w commonjs -o "$out" "$file"
-          done
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const protobuf = require('protobufjs');
+            const schemaPath = 'schema.proto';
+            protobuf.load(schemaPath).then(root => {
+              const MyMessage = root.lookupType('Aircraft');
+              const files = fs.readdirSync('raw').filter(f => f.endsWith('.json'));
+              files.forEach(file => {
+                const filePath = path.join('raw', file);
+                const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                const message = MyMessage.create(jsonData);
+                const buffer = MyMessage.encode(message).finish();
+                const outPath = path.join('proto', file.replace('.json', '.pb'));
+                fs.writeFileSync(outPath, buffer);
+                console.log('Generated', outPath);
+              });
+            }).catch(err => { console.error(err); process.exit(1); });
+          "
+      - name: Commit and push generated PB files
+        working-directory: data
+        run: |
+          # Configure git
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          # Add generated PB files
+          git add proto/*.pb
+          # Only commit if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Generate PB files from JSON"
+            git push origin HEAD:${{ github.ref }}
+          else
+            echo "No PB files to commit."
+          fi
