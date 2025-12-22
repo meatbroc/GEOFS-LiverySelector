@@ -1,70 +1,61 @@
 syntax = "proto3";
 
-message Mp {
-  oneof value {
-    string disabled  = 1;
-    MpArray array = 2;
+message LiveryObject {
+  string version = 1;
+  string dapi = 2;
+  string mapi = 3;
+  repeated Aircraft aircrafts = 4;
+  message MpItem {
+    optional int32 modelIndex = 1;
+    optional int32 textureIndex = 2;
+    optional MpMosaic mosaic = 3;
+    optional int32 material = 4;
+  
+    message MpMosaic {
+      string base = 1;
+      message Tile {
+        optional int32 textureIndex = 1;
+        optional int32 sx = 2;
+        optional int32 sy = 3;
+        optional int32 sw = 4;
+        optional int32 sh = 5;
+        optional int32 dx = 6;
+        optional int32 dy = 7;
+        optional int32 dw = 8;
+        optional int32 dh = 9;
+      }
+      repeated Tile tiles = 2;
+    }
   }
-
-  message MpArray {
-    repeated MpItem items = 1;
-
-    message MpItem {
-      int32 modelIndex = 1;
-      int32 textureIndex = 2;
-      MpMosaic mosaic = 3;
-      int32 material = 4;
-
-      message MpMosaic {
-        string base = 1;
-        message Tile {
-          int32 textureIndex = 1;
-          int32 sx = 2;
-          int32 sy = 3;
-          int32 sw = 4;
-          int32 sh = 5;
-          int32 dx = 6;
-          int32 dy = 7;
-          int32 dw = 8;
-          int32 dh = 9;
-        }
-        repeated Tile tiles = 2;
+  
+  message Livery {
+    string name = 1;
+    repeated Texture texture = 2;
+    string credits = 3;
+    repeated Material materials = 4;
+  
+    message Texture {
+      oneof tex {
+        string path = 1;
+        MaterialReference material = 2;
+      }
+      message MaterialReference {
+        optional int32 material = 1;
       }
     }
-  }
-}
-
-enum TextureType {
-
-}
-
-message Livery {
-  string name = 1;
-  repeated Texture texture = 2;
-  string credits = 3;
-  repeated Material materials = 4;
-
-  message Texture {
-    oneof tex {
-      string path = 1;
-      MaterialReference material = 2;
-    }
-    message MaterialReference {
-      int32 material = 1;
+    message Material {
+      string name = 1;
+      repeated double diffuse = 2;
+      repeated double baseColorFactor = 3;
     }
   }
-  message Material {
-    string name = 1;
-    repeated double diffuse = 2;
-    repeated double baseColorFactor = 3;
+  
+  message Aircraft {
+    repeated int32 index = 1;
+    repeated int32 parts = 2;
+    repeated MpItem mp = 3;
+    repeated Livery liveries = 4;
+    repeated string labels = 5;
+    string name = 6;
   }
-}
-
-message Aircraft {
-  repeated int32 index = 1;
-  repeated int32 parts = 2;
-  Mp mp = 3;
-  repeated Livery liveries = 4;
-  repeated string labels = 5;
-  string name = 6;
 }
