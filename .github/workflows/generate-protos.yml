@@ -55,13 +55,13 @@ jobs:
             const protobuf = require('protobufjs');
             const schemaPath = 'schema.proto';
             protobuf.load(schemaPath).then(root => {
-              const rootDir = path.resolve(process.cwd(), "..");
+              const rootDir = path.resolve(process.cwd(), '..');
               const LiveryObject = root.lookupType('LiveryObject');
-              const jsonPath = path.join(rootDir, "livery.json");
-              const jsonData  = JSON.parse(fs.readFileSync(jsonPath, "utf8"))
+              const jsonPath = path.join(rootDir, 'livery.json');
+              const jsonData  = JSON.parse(fs.readFileSync(jsonPath, 'utf8'))
               const message = LiveryObject.create(jsonData);
               const buffer = LiveryObject.encode(message).finish();
-              const outPath = path.join(rootDir, "proto", 'livery.pb');
+              const outPath = path.join(rootDir, 'proto', 'livery.pb');
               fs.writeFileSync(outPath, buffer);
               console.log('Generated', outPath);
             }).catch(err => { console.error(err); process.exit(1); });
