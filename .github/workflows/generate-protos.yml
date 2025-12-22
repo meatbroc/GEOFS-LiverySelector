@@ -62,6 +62,7 @@ jobs:
               const message = LiveryObject.create(jsonData);
               const buffer = LiveryObject.encode(message).finish();
               const outPath = path.join('proto', 'livery.pb');
+              console.log(outPath);
               fs.writeFileSync(outPath, buffer);
               console.log('Generated', outPath);
             }).catch(err => { console.error(err); process.exit(1); });
