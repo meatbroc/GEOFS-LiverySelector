@@ -359,5 +359,6 @@ window.executeOnEventDone("geofsInitialized", function () {
             };
             return Aircraft;
         })();
+        return LiveryObject;
     })();
 });
