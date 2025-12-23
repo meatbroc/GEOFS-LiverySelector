@@ -1,13 +1,24 @@
 name: Generate PB Files from JSON
 
 on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+        - info
+        - warning
+        - debug
   push:
     paths:
-      - 'data/raw/**.json'
+      - 'livery.json'
       - 'data/schema.proto'
   pull_request:
     paths:
-      - 'data/raw/**.json'
+      - 'livery.json'
       - 'data/schema.proto'
 concurrency:
   group: "committers"
@@ -23,7 +34,7 @@ jobs:
         with:
           fetch-depth: 2
           sparse-checkout: |
-            data/raw
+            livery.json
             data/proto
             data/package.json
             data/package-lock.json
@@ -49,35 +60,31 @@ jobs:
       - name: Convert JSON files to PB
         working-directory: data
         run: |
-          mkdir -p data/proto
+          mkdir -p proto
           node -e "
             const fs = require('fs');
             const path = require('path');
             const protobuf = require('protobufjs');
             const schemaPath = 'schema.proto';
             protobuf.load(schemaPath).then(root => {
-              const MyMessage = root.lookupType('Aircraft');
-              const files = fs.readdirSync('raw').filter(f => f.endsWith('.json'));
-              files.forEach(file => {
-                const filePath = path.join('raw', file);
-                const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-                const message = MyMessage.create(jsonData);
-                const buffer = MyMessage.encode(message).finish();
-                const outPath = path.join('proto', file.replace('.json', '.pb'));
-                fs.writeFileSync(outPath, buffer);
-                console.log('Generated', outPath);
-              });
+              const rootDir = path.resolve(process.cwd(), '..');
+              const LiveryObject = root.lookupType('LiveryObject');
+              const jsonPath = path.join(rootDir, 'livery.json');
+              const jsonData  = JSON.parse(fs.readFileSync(jsonPath, 'utf8'))
+              const message = LiveryObject.create(jsonData);
+              const buffer = LiveryObject.encode(message).finish();
+              const outPath = path.join('proto', 'livery.pb');
+              console.log(outPath);
+              fs.writeFileSync(outPath, buffer);
+              console.log('Generated', outPath);
             }).catch(err => { console.error(err); process.exit(1); });
           "
       - name: Commit and push generated PB files
         working-directory: data
         run: |
-          # Configure git
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          # Add generated PB files
           git add proto/*.pb
-          # Only commit if there are changes
           if ! git diff --cached --quiet; then
             git commit -m "Generate PB files from JSON"
             git push origin HEAD:${{ github.ref }}
