@@ -3,7 +3,7 @@ window.executeOnEventDone("geofsInitialized", function () {
     var $root = window.protobuf.roots["default"] || (window.protobuf.roots["default"] = {});
     $root.LiveryObject = (function () {
         function LiveryObject() {}
-        LiveryObject.prototype.aircrafts = $util.emptyObject;
+        LiveryObject.prototype.aircrafts = window.protobuf.util.emptyObject;
         LiveryObject.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
