@@ -52,6 +52,7 @@ window.executeOnEventDone("geofsInitialized", function () {
                         break;
                 }
             }
+            return message;
         }
         LiveryObject.MpItem = (function() {
             function MpItem() {}
