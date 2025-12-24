@@ -226,8 +226,7 @@ window.executeOnEventDone("geofsInitialized", function () {
                             break;
                         switch (tag >>> 3) {
                         	case 1: {
-                                message.path = reader.string();
-                                break;
+                                return reader.string();
                             }
                         	case 2: {
                                 message.material = $root.LiveryObject.Livery.Texture.MaterialReference.decode(reader, reader.uint32());
