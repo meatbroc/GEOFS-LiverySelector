@@ -3,6 +3,7 @@ window.executeOnEventDone("geofsInitialized", function () {
     var $root = window.protobuf.roots["default"] || (window.protobuf.roots["default"] = {});
     $root.LiveryObject = (function () {
         function LiveryObject() {}
+        LiveryObject.prototype.aircrafts = window.protobuf.util.emptyObject;
         LiveryObject.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
@@ -25,15 +26,33 @@ window.executeOnEventDone("geofsInitialized", function () {
                         break;
                     }
                     case 4: {
-                        if (!(message.aircrafts && message.aircrafts.length))
-                            message.aircrafts = [];
-                        message.aircrafts.push($root.LiveryObject.Aircraft.decode(reader, reader.uint32()));
+                        if (message.aircrafts === window.protobuf.util.emptyObject) message.aircrafts = {};
+                        var end2 = reader.uint32() + reader.pos;
+                        key = "";
+                        value = null;
+                        while (reader.pos < end2) {
+                            var tag2 = reader.uint32();
+                            switch (tag2 >>> 3) {
+                            case 1:
+                                key = reader.string();
+                                break;
+                            case 2:
+                                value = $root.LiveryObject.Aircraft.decode(reader, reader.uint32());
+                                break;
+                            default:
+                                reader.skipType(tag2 & 7);
+                                break;
+                            }
+                        }
+                        message.aircrafts[key] = value;
+                        break;
                     }
                     default:
                         reader.skipType(tag & 7);
                         break;
                 }
             }
+            return message;
         }
         LiveryObject.MpItem = (function() {
             function MpItem() {}
@@ -207,8 +226,7 @@ window.executeOnEventDone("geofsInitialized", function () {
                             break;
                         switch (tag >>> 3) {
                         	case 1: {
-                                message.path = reader.string();
-                                break;
+                                return reader.string();
                             }
                         	case 2: {
                                 message.material = $root.LiveryObject.Livery.Texture.MaterialReference.decode(reader, reader.uint32());
