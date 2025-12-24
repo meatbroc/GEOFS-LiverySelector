@@ -27,7 +27,7 @@ window.executeOnEventDone("geofsInitialized", function () {
                     case 4: {
                         if (!(message.aircrafts && message.aircrafts.length))
                             message.aircrafts = [];
-                        message.aircrafts.push($root.LiveryObject.Aircraft.decode(reader, reader.uint32()));
+                        message.aircrafts.push($root.LiveryObject.Aircraft.decode(reader, reader.string()));
                     }
                     default:
                         reader.skipType(tag & 7);
