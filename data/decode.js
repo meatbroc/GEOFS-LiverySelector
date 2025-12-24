@@ -25,9 +25,26 @@ window.executeOnEventDone("geofsInitialized", function () {
                         break;
                     }
                     case 4: {
-                        if (!(message.aircrafts && message.aircrafts.length))
-                            message.aircrafts = [];
-                        message.aircrafts.push($root.LiveryObject.Aircraft.decode(reader, reader.string()));
+                        if (message.aircrafts === window.protobuf.util.emptyObject) message.aircrafts = {};
+                        var end2 = reader.uint32() + reader.pos;
+                        key = "";
+                        value = null;
+                        while (reader.pos < end2) {
+                            var tag2 = reader.uint32();
+                            switch (tag2 >>> 3) {
+                            case 1:
+                                key = reader.string();
+                                break;
+                            case 2:
+                                value = $root.LiveryObject.Aircraft.decode(reader, reader.uint32());
+                                break;
+                            default:
+                                reader.skipType(tag2 & 7);
+                                break;
+                            }
+                        }
+                        message.aircrafts[key] = value;
+                        break;
                     }
                     default:
                         reader.skipType(tag & 7);
