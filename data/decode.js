@@ -229,7 +229,7 @@ window.executeOnEventDone("geofsInitialized", function () {
                                 return reader.string();
                             }
                         	case 2: {
-                                message.material = $root.LiveryObject.Livery.Texture.MaterialReference.decode(reader, reader.uint32());
+                                message.material = reader.int32();
                                 break;
                             }
                             default:

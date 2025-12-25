@@ -36,13 +36,8 @@ message LiveryObject {
     repeated Material materials = 4;
   
     message Texture {
-      oneof tex {
-        string path = 1;
-        MaterialReference material = 2;
-      }
-      message MaterialReference {
-        optional int32 material = 1;
-      }
+      optional string path = 1;
+      optional int32 material = 2;
     }
     message Material {
       string name = 1;
