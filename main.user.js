@@ -1,4 +1,4 @@
-const LiverySelector = {
+window.LiverySelector = {
     VERSION: 0,
     url: "",
     _repo: "https://raw.githubusercontent.com/kolos26/GEOFS-LiverySelector/main",
@@ -27,7 +27,50 @@ const LiverySelector = {
                 return false;
             }
         },
-        fetch: async function (e) {}
+        fetch: function (e) {
+            try {
+                var t = new URL(e);
+            } catch (a) {
+                var t = new URL(window.LiverySelector.repo + e);
+            }
+            return fetch(t);
+        },
+        testTextureIndex: function (e, t = 0) {
+            var a = geofs.aircraft.instance.definition.parts[t]['3dmodel']._model
+            , o = a._rendererResources.textures[e];
+            if (o.width !== o.height) window.LiverySelector.util.log("Index " + e + ": Non matching height and width", "warn");
+            window.LiverySelector.util.log(`Index ${e}: ${o.width}x${o.height}`);
+            geofs.api.changeModelTexture(a, `https://placehold.co/${o.width}x${o.height}/000000/FFFFFF.png`, {index: e});
+        },
+        downloadTextureIndex: function (e) {
+            const t = geofs.aircraft.instance.definition.parts[0]["3dmodel"]._model._rendererResources.textures[e];
+            if (!t?._texture) return void console.warn("Invalid texture");
+            const r = t._context._gl
+            , n = t._width
+            , a = t._height
+            , o = r.createFramebuffer();
+            r.bindFramebuffer(r.FRAMEBUFFER, o),
+            r.framebufferTexture2D(r.FRAMEBUFFER, r.COLOR_ATTACHMENT0, t._textureTarget, t._texture, 0);
+            const c = r.checkFramebufferStatus(r.FRAMEBUFFER);
+            if(c !== r.FRAMEBUFFER_COMPLETE) return console.error("Framebuffer incomplete:",c), void r.bindFramebuffer(r.FRAMEBUFFER,null);
+            const f = new Uint8Array(n * a * 4);
+            r.readPixels(0, 0, n, a, r.RGBA, r.UNSIGNED_BYTE, f),
+            r.bindFramebuffer(r.FRAMEBUFFER, null),
+            r.deleteFramebuffer(o);
+            const u = document.createElement("canvas");
+            u.width=n, u.height=a;
+            const F = u.getContext("2d")
+            , i = F.createImageData(n,a);
+            i.data.set(f),
+            F.putImageData(i,0,0),
+            u.toBlob(t => {
+                const r = document.createElement("a");
+                r.href = URL.createObjectURL(t),
+                r.download = `texture_${e}.png`,
+                r.click(),
+                URL.revokeObjectURL(r.href)
+            });
+        }
     },
     init: async function () {
         var e = await this.util.getCommit();
