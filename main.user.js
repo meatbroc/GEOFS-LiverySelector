@@ -42,8 +42,8 @@ window.LiverySelector = {
             window.LiverySelector.util.log(`Index ${e}: ${o.width}x${o.height}`);
             geofs.api.changeModelTexture(a, `https://placehold.co/${o.width}x${o.height}/000000/FFFFFF.png`, {index: e});
         },
-        downloadTextureIndex: function (e, t = 0) {
-            const t = geofs.aircraft.instance.definition.parts[t]["3dmodel"]._model._rendererResources.textures[e];
+        downloadTextureIndex: function (e, T = 0) {
+            const t = geofs.aircraft.instance.definition.parts[T]["3dmodel"]._model._rendererResources.textures[e];
             if (!t?._texture) return void console.warn("Invalid texture");
             const r = t._context._gl
             , n = t._width
