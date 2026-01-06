@@ -14,11 +14,11 @@ window.LiverySelector = {
                 console[t]("%c[%cLivery%cSelector%c]%c", LOG_STYLE + "inherit;", LOG_STYLE + "#bcc3cb;", LOG_STYLE + "#3f5f8a;", LOG_STYLE + "inherit;", LOG_STYLE + "inherit;", e);
             }
         })(),
-        getCommit: async function (e = "kolos26") {
-            var t = await fetch(`https://api.github.com/repos/${e}/GEOFS-LiverySelector/commits/main`);
-            if (!t.ok) return false;
-            var a = (await t.json()).sha;
-            return /^[a-f0-9]{40}$/.test(a) ? a : false;
+        getCommit: async function (e = "kolos26", t = "main") {
+            var a = await fetch(`https://api.github.com/repos/${e}/GEOFS-LiverySelector/commits/${t}`, {headers: {"Accept": "application/vnd.github.sha"}});
+            if (!a.ok) return false;
+            var o = (await a.text()).trim();
+            return /^[a-f0-9]{40}$/.test(o) ? o : false;
         },
         validateURL: e => {
             try {
@@ -27,16 +27,8 @@ window.LiverySelector = {
                 return false;
             }
         },
-        fetch: function (e) {
-            try {
-                var t = new URL(e);
-            } catch (a) {
-                var t = new URL(window.LiverySelector.repo + e);
-            }
-            return fetch(t);
-        },
         testTextureIndex: function (e, t = 0) {
-            var a = geofs.aircraft.instance.definition.parts[t]['3dmodel']._model
+            var a = geofs.aircraft.instance.definition.parts[t]["3dmodel"]._model
             , o = a._rendererResources.textures[e];
             if (o.width !== o.height) window.LiverySelector.util.log("Index " + e + ": Non matching height and width", "warn");
             window.LiverySelector.util.log(`Index ${e}: ${o.width}x${o.height}`);
@@ -74,9 +66,8 @@ window.LiverySelector = {
     },
     init: async function () {
         var e = await this.util.getCommit();
-        if (e) {
-
-        }
+        if (!e) return void this.util.log("Unable to fetch latest commit", "error");
+        this.cdn = this.cdn.replace("@main", "@" + e);
     },
     aircraft: {}, // liveryobj
     mp: {
